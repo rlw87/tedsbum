@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1a1030" />
+    <title>Ted's Bum</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        width: 100%;
+        background: #0c0720;
+        color: #fff;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
+      #game {
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+      }
+      #game canvas {
+        display: block;
+        touch-action: none;
+      }
+      #rotate-prompt {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(12, 7, 32, 0.95);
+        text-align: center;
+        padding: 2rem;
+        z-index: 10;
+        font-size: 1.1rem;
+      }
+      @media (orientation: portrait) and (max-width: 900px) {
+        #rotate-prompt.show {
+          display: flex;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game"></div>
+    <div id="rotate-prompt">
+      <div>
+        <div style="font-size: 3rem; margin-bottom: 0.5rem">↻</div>
+        Please rotate your device to landscape for the best experience.
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
