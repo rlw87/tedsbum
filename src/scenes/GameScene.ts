@@ -138,7 +138,10 @@ export class GameScene extends Phaser.Scene {
     this.clock.start(this.player.ctx, this.player.startedAt);
 
     this.player.onEnded = () => {
-      this.finishIfDone();
+      // Called from a browser audio event outside Phaser's loop, so bypass
+      // the spawner check — by the time the buffer finishes all notes are past
+      // their death window anyway.
+      this.finishIfDone(true);
     };
 
     const countdown = this.add
@@ -200,9 +203,9 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  private finishIfDone(): void {
+  private finishIfDone(force = false): void {
     if (this.finished) return;
-    if (!this.spawner || !this.spawner.finished()) return;
+    if (!force && (!this.spawner || !this.spawner.finished())) return;
     this.finished = true;
     const accuracy = this.score.accuracy();
     const id = this.level?.id ?? 'custom';
