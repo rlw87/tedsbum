@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { nextLevel } from '../levels/levels';
+import { loadProgress } from '../utils/storage';
 
 interface ResultData {
   levelId: string;
@@ -58,19 +59,20 @@ export class ResultScene extends Phaser.Scene {
     });
 
     const next = nextLevel(data.levelId);
+    const previouslyCompleted = loadProgress().levels[data.levelId]?.completed ?? false;
     const offset = next ? -120 : 0;
 
     this.makeButton(width / 2 + offset, height - 100, 'Retry', () => {
       this.scene.start('game', { levelId: data.levelId });
     });
 
-    if (next && passed) {
+    if (next && (passed || previouslyCompleted)) {
       this.makeButton(width / 2 + 120, height - 100, 'Next level →', () => {
         this.scene.start('game', { levelId: next.id });
       });
     }
 
-    this.makeButton(60, 40, 'Levels', () => this.scene.start('level-select'), 140, 50, 18);
+    this.makeButton(60, 40, '← Menu', () => this.scene.start('menu'), 160, 50, 18);
   }
 
   private makeButton(
