@@ -33,6 +33,7 @@ export class GameScene extends Phaser.Scene {
   private score = new ScoreManager();
   private level: LevelDef | null = null;
   private finished = false;
+  private beatmapDuration = 0;
   private loadingText: Phaser.GameObjects.Text | null = null;
   private spawnPositions!: Record<Lane, Phaser.Math.Vector2>;
 
@@ -127,6 +128,7 @@ export class GameScene extends Phaser.Scene {
 
   private startGame({ map, buffer, level }: Prepared): void {
     this.level = level;
+    this.beatmapDuration = map.duration;
     this.score = new ScoreManager();
     this.score.setTotalNotes(map.notes.length);
     this.spawner = new NoteSpawner(this, this.ted, map, this.spawnPositions);
@@ -137,10 +139,10 @@ export class GameScene extends Phaser.Scene {
     this.player.play(buffer, leadIn);
     this.clock.start(this.player.ctx, this.player.startedAt);
 
+    // onEnded fires from a browser audio event outside Phaser's loop.
+    // Set a flag rather than calling scene.start() from there — we rely on
+    // update() to do the actual transition safely inside the game loop.
     this.player.onEnded = () => {
-      // Called from a browser audio event outside Phaser's loop, so bypass
-      // the spawner check — by the time the buffer finishes all notes are past
-      // their death window anyway.
       this.finishIfDone(true);
     };
 
@@ -164,6 +166,14 @@ export class GameScene extends Phaser.Scene {
   update(): void {
     if (!this.spawner || this.finished) return;
     const t = this.clock.now();
+
+    // Hard deadline: if the clock is past the beatmap duration the song is
+    // over regardless of whether onEnded fired or the spawner swept cleanly.
+    if (this.beatmapDuration > 0 && t > this.beatmapDuration + 0.5) {
+      this.finishIfDone(true);
+      return;
+    }
+
     const active = this.spawner.update(t);
     this.hits.setNotes(active);
     this.hits.sweepMisses(t, () => {
@@ -172,7 +182,7 @@ export class GameScene extends Phaser.Scene {
     });
     this.hud.update(this.score.score, this.score.combo, this.score.accuracy());
     if (this.spawner.finished()) {
-      this.finishIfDone();
+      this.finishIfDone(true);
     }
   }
 
@@ -210,17 +220,15 @@ export class GameScene extends Phaser.Scene {
     const accuracy = this.score.accuracy();
     const id = this.level?.id ?? 'custom';
     if (id !== 'custom') recordResult(id, accuracy, this.score.score);
-    this.time.delayedCall(400, () => {
-      this.scene.start('result', {
-        levelId: id,
-        title: this.level?.title ?? 'Custom Track',
-        score: this.score.score,
-        accuracy,
-        perfects: this.score.perfects,
-        goods: this.score.goods,
-        misses: this.score.misses,
-        maxCombo: this.score.maxCombo,
-      });
+    this.scene.start('result', {
+      levelId: id,
+      title: this.level?.title ?? 'Custom Track',
+      score: this.score.score,
+      accuracy,
+      perfects: this.score.perfects,
+      goods: this.score.goods,
+      misses: this.score.misses,
+      maxCombo: this.score.maxCombo,
     });
   }
 
